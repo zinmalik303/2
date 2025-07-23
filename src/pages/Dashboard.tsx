@@ -64,25 +64,26 @@ const Dashboard = () => {
   const [verifyingTasks, setVerifyingTasks] = useState<Record<string, number>>({});
 
   const handleVerificationComplete = async (taskId: string) => {
-    const failedKey = `${taskId}_failed`;
-    const alreadyFailed = completedFirstClick[failedKey] || false;
+    if (!taskId) return;
     
-    if (!alreadyFailed) {
-      // Первая попытка - всегда провал (фейк проверка)
+    const failedKey = `${taskId}_failed`;
+    const hasAlreadyFailed = completedFirstClick[failedKey] || false;
+    
+    if (!hasAlreadyFailed) {
+      // Первая попытка - показываем провал
       await updateCompletedFirstClick(failedKey, true);
       setShowFirstAttemptFailModal(true);
       return;
     }
     
-    // Вторая попытка - успех
+    // Вторая попытка - засчитываем как выполненное
     try {
-      const success = await submitTask(taskId, { 
-        text: 'verified',
-        screenshot: 'verified' 
+      const success = await submitTask(taskId, {
+        text: `verified_${taskId}`,
+        screenshot: `verified_${taskId}`
       });
       
       if (success) {
-        await updateCompletedTasks(taskId, true);
         await refreshData();
         setShowSuccessNotification(true);
         setTimeout(() => setShowSuccessNotification(false), 3000);
@@ -91,6 +92,7 @@ const Dashboard = () => {
         setTimeout(() => setShowFailureNotification(false), 3000);
       }
     } catch (error) {
+      console.error('Error in handleVerificationComplete:', error);
       setShowFailureNotification(true);
       setTimeout(() => setShowFailureNotification(false), 3000);
     }
