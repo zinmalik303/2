@@ -76,12 +76,12 @@ const Dashboard = () => {
     
     // Вторая попытка - успех
     try {
-      const wasSuccessful = await submitTask(taskId, { 
+      const success = await submitTask(taskId, { 
         text: 'verified',
         screenshot: 'verified' 
       });
       
-      if (wasSuccessful) {
+      if (success) {
         await updateCompletedTasks(taskId, true);
         await refreshData();
         setShowSuccessNotification(true);
@@ -91,7 +91,6 @@ const Dashboard = () => {
         setTimeout(() => setShowFailureNotification(false), 3000);
       }
     } catch (error) {
-      console.error('Error in handleVerificationComplete:', error);
       setShowFailureNotification(true);
       setTimeout(() => setShowFailureNotification(false), 3000);
     }
@@ -201,16 +200,15 @@ const Dashboard = () => {
   };
 
   const handleUsernameSubmit = async () => {
-    console.log('handleUsernameSubmit called for:', currentTask, 'username:', username);
-
     setShowUsernameModal(false);
     
     // Запускаем таймер проверки
-    console.log('Starting timer for:', currentTask);
-    setVerifyingTasks(prev => ({
-      ...prev,
-      [currentTask!]: 10
-    }));
+    if (currentTask) {
+      setVerifyingTasks(prev => ({
+        ...prev,
+        [currentTask]: 10
+      }));
+    }
 
     setUsername('');
     setCurrentTask(null);
