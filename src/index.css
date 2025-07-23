@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    font-size: 16px;
+  }
+}
+
+body {
+  @apply bg-background text-white font-sans overflow-x-hidden touch-pan-y;
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Animated background */
+.animated-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 0% 0%, rgba(0, 255, 178, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 0% 100%, rgba(0, 255, 178, 0.15) 0%, transparent 50%);
+  background-color: #0A0A0A;
+  animation: bgAnimation 15s ease infinite alternate;
+}
+
+.animated-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(0, 255, 178, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 255, 178, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+  animation: patternAnimation 60s linear infinite;
+}
+
+.animated-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 0%, #0A0A0A 100%);
+  opacity: 0.7;
+}
+
+@keyframes bgAnimation {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 50% 50%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes patternAnimation {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-100%) rotate(360deg);
+  }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+@layer components {
+  .btn {
+    @apply px-6 py-2 rounded-md font-medium transition-all duration-300 relative overflow-hidden active:scale-95;
+  }
+
+  .btn-primary {
+    @apply bg-neon-green text-background font-semibold hover:bg-opacity-90 hover:shadow-[0_0_15px_rgba(0,255,178,0.6)] active:shadow-[0_0_5px_rgba(0,255,178,0.4)];
+  }
+
+  .btn-outline {
+    @apply border border-neon-green text-neon-green hover:bg-neon-green hover:bg-opacity-10 hover:shadow-[0_0_10px_rgba(0,255,178,0.4)] active:shadow-[0_0_5px_rgba(0,255,178,0.2)];
+  }
+
+  .btn-disabled {
+    @apply bg-light-gray text-gray-400 cursor-not-allowed;
+  }
+
+  .card {
+    @apply bg-dark-gray/80 backdrop-blur-sm rounded-lg p-6 border border-light-gray transition-all duration-300;
+  }
+
+  .card-hover {
+    @apply hover:border-neon-green hover:shadow-[0_0_15px_rgba(0,255,178,0.2)];
+  }
+
+  .input {
+    @apply bg-light-gray/80 backdrop-blur-sm border border-light-gray rounded-md px-4 py-3 text-white focus:outline-none focus:border-neon-green focus:ring-1 focus:ring-neon-green;
+  }
+
+  .badge {
+    @apply px-3 py-1 text-xs rounded-full font-medium;
+  }
+
+  .badge-easy {
+    @apply bg-green-900/80 backdrop-blur-sm text-green-300;
+  }
+
+  .badge-medium {
+    @apply bg-yellow-900/80 backdrop-blur-sm text-yellow-300;
+  }
+
+  .badge-hard {
+    @apply bg-red-900/80 backdrop-blur-sm text-red-300;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .card {
+      @apply p-4;
+    }
+    
+    .input {
+      @apply px-3 py-2 text-sm;
+    }
+    
+    .btn {
+      @apply px-4 py-2 text-sm;
+    }
+
+    main {
+      @apply pt-[60px] !important;
+    }
+
+    h1 {
+      @apply text-2xl;
+    }
+
+    h2 {
+      @apply text-xl;
+    }
+
+    h3 {
+      @apply text-lg;
+    }
+
+    p {
+      @apply text-sm;
+    }
+
+    .badge {
+      @apply text-xs px-2 py-0.5;
+    }
+  }
+}
+
+/* Custom animations */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 255, 178, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 255, 178, 0.8);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Better touch feedback */
+@media (hover: none) {
+  .btn:active,
+  .card-hover:active {
+    @apply transform scale-[0.98] transition-transform duration-150;
+  }
+}
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.animate-typing {
+  animation: typing 2s steps(30, end), blink 0.75s step-end infinite;
+  white-space: nowrap;
+  overflow: visible;
+  padding-bottom: 4px; /* ← добавлено */
+  border-right: 2px solid rgba(0, 255, 178, 0.8);
+}
+
