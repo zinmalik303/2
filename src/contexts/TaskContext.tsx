@@ -33,8 +33,6 @@ interface TaskContextType {
   updateVisitedTasks: (taskId: string, visited: boolean) => Promise<void>;
   incrementGlobalAttemptCount: () => Promise<void>;
   incrementFailAttemptCount: () => Promise<void>;
-  isVerifying: boolean;
-  verificationCountdown: number;
   refreshData: () => Promise<void>;
 }
 
@@ -48,8 +46,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [visitedTasks, setVisitedTasks] = useState<Record<string, boolean>>({});
   const [globalAttemptCount, setGlobalAttemptCount] = useState(0);
   const [failAttemptCount, setFailAttemptCount] = useState(0);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationCountdown, setVerificationCountdown] = useState(10);
 
   const { supabaseUser, updateTasksCompleted, refreshUser } = useAuth();
 
@@ -130,7 +126,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     data: { screenshot?: string; text?: string },
     onFirstFail?: () => void
   ): Promise<boolean> => {
-    console.log('TaskContext submitTask called with:', { taskId, data, supabaseUser: !!supabaseUser });
     if (!supabaseUser) return false;
 
     // Special handling for telegram and instagram tasks
@@ -138,13 +133,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const failedKey = `${taskId}_failed`;
       const alreadyFailed = completedFirstClick[failedKey] || false;
       
-      console.log('TaskContext submitTask - taskId:', taskId);
-      console.log('TaskContext submitTask - failedKey:', failedKey);
-      console.log('TaskContext submitTask - completedFirstClick:', completedFirstClick);
-      console.log('TaskContext submitTask - alreadyFailed:', alreadyFailed);
-      
       if (!alreadyFailed) {
-        console.log('TaskContext submitTask - First attempt, setting failed flag');
         // First attempt - always fail
         await updateCompletedFirstClick(failedKey, true);
         if (onFirstFail) onFirstFail();
@@ -152,21 +141,16 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Second attempt - success
-      console.log('TaskContext submitTask - Second attempt, completing task');
       try {
-        console.log('Calling dbHelpers.submitTask with:', { userId: supabaseUser.id, taskId, data: { ...data, status: 'Approved' } });
         const submission = await dbHelpers.submitTask(supabaseUser.id, taskId, {
           ...data,
           status: 'Approved',
         });
 
-        console.log('dbHelpers.submitTask returned:', submission);
         if (!submission) {
-          console.log('TaskContext submitTask - No submission returned from dbHelpers');
           return false;
         }
 
-        console.log('TaskContext submitTask - Submission successful:', submission);
 
         // Update local state
         const newSubmission: TaskSubmission = {
@@ -178,7 +162,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           screenshot: submission.screenshot || undefined,
         };
 
-        console.log('Adding new submission to local state:', newSubmission);
         setUserSubmissions(prev => {
           const filtered = prev.filter(sub => sub.taskId !== taskId);
           return [...filtered, newSubmission];
@@ -186,10 +169,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Update tasks completed count
         const approvedCount = userSubmissions.filter(s => s.status === 'Approved').length + 1;
-        console.log('TaskContext submitTask - Updating tasks completed to:', approvedCount);
         await updateTasksCompleted(approvedCount);
 
-        console.log('TaskContext submitTask - Task completed successfully');
         return true;
       } catch (error) {
         console.error('Error submitting telegram/instagram task:', error);
@@ -197,78 +178,41 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    return new Promise((resolve) => {
-      const failAt = Date.now() + 10000; // 10 секунд
-      setIsVerifying(true);
-      setVerificationCountdown(10);
+    // For survey and other tasks - direct success
+    try {
+      const submission = await dbHelpers.submitTask(supabaseUser.id, taskId, {
+        ...data,
+        status: 'Approved',
+      });
 
-      const interval = setInterval(async () => {
-        const timeLeft = Math.max(0, Math.floor((failAt - Date.now()) / 1000));
-        setVerificationCountdown(timeLeft);
+      if (!submission) {
+        return false;
+      }
 
-        if (timeLeft > 0) return;
+      // Update local state
+      const newSubmission: TaskSubmission = {
+        taskId: submission.task_id,
+        userId: submission.user_id,
+        status: submission.status as TaskStatus,
+        submittedAt: submission.submitted_at,
+        text: submission.text || undefined,
+        screenshot: submission.screenshot || undefined,
+      };
 
-        clearInterval(interval);
-        setIsVerifying(false);
+      setUserSubmissions(prev => {
+        const filtered = prev.filter(sub => sub.taskId !== taskId);
+        return [...filtered, newSubmission];
+      });
 
-        const handleSuccess = async () => {
-          try {
-            // Submit to database
-            const submission = await dbHelpers.submitTask(supabaseUser.id, taskId, {
-              ...data,
-              status: 'Approved',
-            });
+      // Update tasks completed count
+      const approvedCount = userSubmissions.filter(s => s.status === 'Approved').length + 1;
+      await updateTasksCompleted(approvedCount);
 
-            if (!submission) {
-              resolve(false);
-              return;
-            }
-
-            // Update local state
-            const newSubmission: TaskSubmission = {
-              taskId: submission.task_id,
-              userId: submission.user_id,
-              status: submission.status as TaskStatus,
-              submittedAt: submission.submitted_at,
-              text: submission.text || undefined,
-              screenshot: submission.screenshot || undefined,
-            };
-
-            setUserSubmissions(prev => {
-              const filtered = prev.filter(sub => sub.taskId !== taskId);
-              return [...filtered, newSubmission];
-            });
-
-            // Update tasks completed count if it's a real task
-            if (!['telegram', 'instagram'].includes(taskId)) {
-              const approvedCount = userSubmissions.filter(s => s.status === 'Approved').length + 1;
-              await updateTasksCompleted(approvedCount);
-            }
-
-            resolve(true);
-          } catch (error) {
-            console.error('Error in handleSuccess:', error);
-            resolve(false);
-          }
-        };
-
-        if (taskId === 'survey') {
-          await handleSuccess();
-          return;
-        }
-
-        // Global attempt logic
-        if ([1, 4, 5].includes(globalAttemptCount + 1)) {
-          await incrementFailAttemptCount();
-          if (onFirstFail) onFirstFail();
-          window.dispatchEvent(new Event('task-verification-failed'));
-          resolve(false);
-          return;
-        }
-
-        await handleSuccess();
-      }, 1000);
-    });
+      return true;
+    } catch (error) {
+      console.error('Error submitting task:', error);
+      return false;
+    }
   };
 
   const updateCompletedTasks = async (taskId: string, completed: boolean) => {
@@ -319,8 +263,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateVisitedTasks,
         incrementGlobalAttemptCount,
         incrementFailAttemptCount,
-        isVerifying,
-        verificationCountdown,
         refreshData,
       }}
     >

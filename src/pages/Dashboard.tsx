@@ -1,41 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { 
-  TrendingUp, 
-  Users, 
-  Wallet, 
-  Star,
-  Flame,
-  Sparkles,
-  DollarSign,
   ExternalLink,
-  Store,
-  Users2,
-  Network,
-  Rocket,
-  Trophy,
-  Zap,
   MessageCircle,
-  Code,
-  Twitter,
   ArrowRight,
   Clock,
-  Shield,
-  Target,
-  Send,
   Instagram,
   CheckCircle,
   X,
   Loader2,
   PartyPopper,
   AlertCircle,
-  Hourglass,
-  Smartphone,
-  Coins,
-  Building2,
-  GraduationCap,
-  Gamepad2,
-  CircleDollarSign
+  CircleDollarSign,
+  Shield,
+  Users,
+  Wallet
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,8 +24,6 @@ const Dashboard = () => {
   const { user, updateUserBalance, setUserAsCongratulated, loading, refreshUser } = useAuth();
   const { 
     submitTask, 
-    isVerifying, 
-    verificationCountdown, 
     completedTasks,
     updateCompletedTasks,
     completedFirstClick,
@@ -65,18 +42,6 @@ const Dashboard = () => {
     );
   }
 
-  useEffect(() => {
-  console.log("USER DATA:", user);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
-
-useEffect(() => {
-  const failHandler = () => setShowFirstAttemptFailModal(true);
-  window.addEventListener('task-verification-failed', failHandler);
-  return () => window.removeEventListener('task-verification-failed', failHandler);
-}, []);
-
-
   const [showMinBalanceModal, setShowMinBalanceModal] = useState(false);
   const [showCongratsModal, setShowCongratsModal] = useState(false);
   const [showFirstAttemptFailModal, setShowFirstAttemptFailModal] = useState(false);
@@ -92,49 +57,29 @@ useEffect(() => {
   const [verifyingTasks, setVerifyingTasks] = useState<Record<string, number>>({});
 
   const handleVerificationComplete = async (taskId: string) => {
-    console.log('handleVerificationComplete called for:', taskId);
-    console.log('completedFirstClick:', completedFirstClick);
-    
     const failedKey = `${taskId}_failed`;
     const alreadyFailed = completedFirstClick[failedKey] || false;
     
-    console.log('alreadyFailed:', alreadyFailed);
-    
     if (!alreadyFailed) {
       // Первая попытка - всегда провал (фейк проверка)
-      console.log('First attempt - showing failure modal');
       await updateCompletedFirstClick(failedKey, true);
       setShowFirstAttemptFailModal(true);
       return;
     }
     
     // Вторая попытка - успех
-    console.log('Second attempt - completing task');
     try {
-      console.log('Calling submitTask with:', { taskId, data: { text: 'verified', screenshot: 'verified' } });
       const wasSuccessful = await submitTask(taskId, { 
         text: 'verified',
         screenshot: 'verified' 
       });
       
-      console.log('submitTask result:', wasSuccessful);
-      
       if (wasSuccessful) {
-        console.log('Task successful, updating completed tasks');
         await updateCompletedTasks(taskId, true);
-        
-        // Обновляем счетчик выполненных заданий
-        const newCount = (user?.tasksCompleted || 0) + 1;
-        console.log('Updating tasks completed to:', newCount);
-        // await updateTasksCompleted(newCount); // Это должно происходить в TaskContext
-        
         await refreshData();
-        
-        console.log('Showing success notification');
         setShowSuccessNotification(true);
         setTimeout(() => setShowSuccessNotification(false), 3000);
       } else {
-        console.log('Task submission failed');
         setShowFailureNotification(true);
         setTimeout(() => setShowFailureNotification(false), 3000);
       }
@@ -147,18 +92,14 @@ useEffect(() => {
 
   // Timer effect for dashboard tasks
   useEffect(() => {
-    console.log('Timer effect triggered, verifyingTasks:', verifyingTasks);
     const intervals: NodeJS.Timeout[] = [];
 
     Object.entries(verifyingTasks).forEach(([taskId, countdown]) => {
       if (countdown > 0) {
-        console.log(`Setting interval for ${taskId}, countdown: ${countdown}`);
         const interval = setInterval(() => {
           setVerifyingTasks(prev => {
             const newCountdown = prev[taskId] - 1;
-            console.log(`${taskId} countdown: ${newCountdown}`);
             if (newCountdown <= 0) {
-              console.log(`Timer finished for ${taskId}, calling handleVerificationComplete`);
               const updated = { ...prev };
               delete updated[taskId];
               // Вызываем проверку когда таймер заканчивается
@@ -176,7 +117,7 @@ useEffect(() => {
     });
 
     return () => intervals.forEach(clearInterval);
-  }, [verifyingTasks, completedFirstClick, user?.tasksCompleted]);
+  }, [verifyingTasks]);
 
   const { scrollYProgress } = useScroll();
 
@@ -221,7 +162,6 @@ useEffect(() => {
 
   // СБРОС username перед открытием нового задания
   setUsername('');
-
   if (task === 'survey') {
     setCurrentSurveyStep(0);
     setSurveyAnswers([]);
@@ -257,13 +197,11 @@ useEffect(() => {
 
  const handleUsernameSubmit = async () => {
     console.log('handleUsernameSubmit called for:', currentTask, 'username:', username);
-    if (!currentTask || !username.trim()) return;
 
     setShowUsernameModal(false);
     
     // Запускаем таймер проверки
     console.log('Starting timer for:', currentTask);
-    setVerifyingTasks(prev => ({
       ...prev,
       [currentTask]: 10
     }));
@@ -349,12 +287,11 @@ useEffect(() => {
     return (
       <button
         onClick={() => handleTaskClick(task)}
-        disabled={isVerifying}
         className={`w-full rounded-lg py-2 px-4 flex items-center justify-center font-medium transition-all duration-300 ${
           completedFirstClick[task]
             ? `bg-gradient-to-r ${gradients[task]} bg-opacity-10 hover:bg-opacity-20 relative overflow-hidden group`
             : `bg-${task}-500/10 hover:bg-${task}-500/20 ${baseColors[task]}`
-        } ${isVerifying ? 'opacity-50 cursor-not-allowed' : ''}`}
+        }`}
       >
         {completedFirstClick[task] ? (
           <>
@@ -625,7 +562,6 @@ useEffect(() => {
             <div className="relative p-0">
               <div className="flex items-center gap-3 mb-8">
                 <Rocket className="h-6 w-6 text-[#009dff]" />
-                <h2 className="text-2xl font-bold text-white">
                   Coming Soon
                 </h2>
               </div>
@@ -636,7 +572,6 @@ useEffect(() => {
     <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-purple-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
     <div className="flex justify-center">
       <Trophy className="h-8 w-8 text-purple-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    </div>
     <h3 className="text-lg font-bold mb-2">Leaderboard & Weekly Prizes</h3>
     <p className="text-sm text-gray-400">Compete with other users and win exclusive rewards every week.</p>
   </div>
@@ -646,7 +581,6 @@ useEffect(() => {
     <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-blue-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
     <div className="flex justify-center">
       <Smartphone className="h-8 w-8 text-blue-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    </div>
     <h3 className="text-lg font-bold mb-2">Mobile App</h3>
     <p className="text-sm text-gray-400">Complete tasks and track earnings on the go with our mobile app.</p>
   </div>
@@ -656,7 +590,6 @@ useEffect(() => {
     <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-orange-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
     <div className="flex justify-center">
       <Coins className="h-8 w-8 text-orange-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    </div>
     <h3 className="text-lg font-bold mb-2">Solana Token</h3>
     <p className="text-sm text-gray-400">Native token on Solana for rewards, governance, and exclusive features.</p>
   </div>
@@ -666,7 +599,6 @@ useEffect(() => {
     <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-emerald-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
     <div className="flex justify-center">
       <Building2 className="h-8 w-8 text-emerald-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    </div>
     <h3 className="text-lg font-bold mb-2">Employer Dashboard</h3>
     <p className="text-sm text-gray-400">Post tasks, manage submissions, and find top talent in Web3.</p>
   </div>
@@ -676,7 +608,6 @@ useEffect(() => {
     <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-yellow-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
     <div className="flex justify-center">
       <GraduationCap className="h-8 w-8 text-yellow-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    </div>
     <h3 className="text-lg font-bold mb-2">Learn & Earn Quests</h3>
     <p className="text-sm text-gray-400">Master Web3 skills while earning rewards through interactive courses.</p>
   </div>
@@ -686,7 +617,6 @@ useEffect(() => {
     <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-pink-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
     <div className="flex justify-center">
       <Gamepad2 className="h-8 w-8 text-pink-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    </div>
     <h3 className="text-lg font-bold mb-2">Play & Earn Games</h3>
     <p className="text-sm text-gray-400">Earn tokens while playing exciting Web3 games and challenges.</p>
   </div>

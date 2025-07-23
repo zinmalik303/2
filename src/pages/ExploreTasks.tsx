@@ -2,13 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Sparkles, 
-  Zap, 
-  Trophy, 
   ExternalLink, 
   Lock, 
   Download, 
-  Flame, 
   ChevronDown, 
   ChevronUp,
   CheckCircle,
@@ -16,28 +12,22 @@ import {
   Loader2,
   Upload,
   Link as LinkIcon,
-  Clock,
-  PartyPopper,
   ArrowRight,
   DollarSign,
-  Target,
   Shield,
-  Users,
-  Rocket,
   Globe,
   ArrowUpRight,
   Star,
   TrendingUp,
-  Coins,
   Vote,
   Layers,
   Flag,
-  Award,
   Wallet,
   MessageSquare,
   LineChart,
-  Share2,
-  Settings, ShieldCheck
+  Settings, 
+  ShieldCheck,
+  Target
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TaskContext';
@@ -343,7 +333,6 @@ const progress = isVerifying ? ((maxTime - countdown) / maxTime) * 100 : 0;
               Hot Task
             </div>
 
-           <div className="flex flex-col sm:flex-row items-start gap-6">
 
               <div className="flex-shrink-0">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
@@ -362,7 +351,6 @@ const progress = isVerifying ? ((maxTime - countdown) / maxTime) * 100 : 0;
                       <span className="text-sm">Reward</span>
                     </div>
                     <p className="text-xl font-bold">${task.reward.toFixed(2)}</p>
-                  </div>
                   
                   <div className="bg-dark-gray/50 rounded-xl p-3">
                     <div className="flex items-center gap-2 text-green-400 mb-1">
@@ -378,7 +366,6 @@ const progress = isVerifying ? ((maxTime - countdown) / maxTime) * 100 : 0;
                       <span className="text-sm">Available</span>
                     </div>
                     <p className="text-xl font-bold">24h</p>
-                  </div>
 
                   {task.imageUrl && (
                     <div className="bg-dark-gray/50 rounded-xl p-3 flex items-center justify-center">
