@@ -14,7 +14,14 @@ import {
   CircleDollarSign,
   Shield,
   Users,
-  Wallet
+  Wallet,
+  Rocket,
+  Trophy,
+  Smartphone,
+  Coins,
+  Building2,
+  GraduationCap,
+  Gamepad2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -158,50 +165,49 @@ const Dashboard = () => {
   }, [hasAllDashboardTasksCompleted, user?.congratulated, user?.hasGivenReward]);
 
   const handleTaskClick = async (task: 'telegram' | 'instagram' | 'survey') => {
-  if (isVerifying) return;
+    const isVerifying = task in verifyingTasks;
+    if (isVerifying) return;
 
-  // СБРОС username перед открытием нового задания
-  setUsername('');
-  if (task === 'survey') {
-    setCurrentSurveyStep(0);
-    setSurveyAnswers([]);
-    setShowSurveyModal(true);
-    return;
-  }
-
-  if (!completedFirstClick[task]) {
-    await updateCompletedFirstClick(task, true);
-    
-    if (task === 'telegram') {
-      window.open('https://t.me/+atUr8L_y6nJhMWVi', '_blank');
-    } else if (task === 'instagram') {
-      window.open('https://www.instagram.com/sonavo.web3?igsh=MzhpOTdrOHZ1YmRp/', '_blank');
+    // СБРОС username перед открытием нового задания
+    setUsername('');
+    if (task === 'survey') {
+      setCurrentSurveyStep(0);
+      setSurveyAnswers([]);
+      setShowSurveyModal(true);
+      return;
     }
-  } else {
-    setCurrentTask(task);
-    setShowUsernameModal(true);
-  }
-};
 
- const checkAndRewardIfEligible = async () => {
-  if (hasAllDashboardTasksCompleted && !user?.congratulated && !user?.hasGivenReward) {
-    await updateUserBalance(10);
-    await setUserAsCongratulated();
+    if (!completedFirstClick[task]) {
+      await updateCompletedFirstClick(task, true);
+      
+      if (task === 'telegram') {
+        window.open('https://t.me/+atUr8L_y6nJhMWVi', '_blank');
+      } else if (task === 'instagram') {
+        window.open('https://www.instagram.com/sonavo.web3?igsh=MzhpOTdrOHZ1YmRp/', '_blank');
+      }
+    } else {
+      setCurrentTask(task);
+      setShowUsernameModal(true);
+    }
+  };
 
-    setShowCongratsModal(true);
-  }
-};
+  const checkAndRewardIfEligible = async () => {
+    if (hasAllDashboardTasksCompleted && !user?.congratulated && !user?.hasGivenReward) {
+      await updateUserBalance(10);
+      await setUserAsCongratulated();
 
+      setShowCongratsModal(true);
+    }
+  };
 
-
-
- const handleUsernameSubmit = async () => {
+  const handleUsernameSubmit = async () => {
     console.log('handleUsernameSubmit called for:', currentTask, 'username:', username);
 
     setShowUsernameModal(false);
     
     // Запускаем таймер проверки
     console.log('Starting timer for:', currentTask);
+    setVerifyingTasks(prev => ({
       ...prev,
       [currentTask]: 10
     }));
@@ -226,15 +232,14 @@ const Dashboard = () => {
   };
 
   const handleWithdrawClick = () => {
-  if (user?.balance < 30) {
-    setShowMinBalanceModal(true);
-    return;
-  }
+    if (user?.balance < 30) {
+      setShowMinBalanceModal(true);
+      return;
+    }
 
-  // Здесь позже можно добавить подключение кошелька
-  setShowWithdrawModal(true);
-};
-
+    // Здесь позже можно добавить подключение кошелька
+    setShowWithdrawModal(true);
+  };
 
   const renderTaskButton = (task: 'telegram' | 'instagram' | 'survey') => {
     const isVerifying = task in verifyingTasks;
@@ -313,7 +318,6 @@ const Dashboard = () => {
     );
   };
 
-
   return (
     <div className="relative min-h-screen">
       <motion.div 
@@ -370,14 +374,14 @@ const Dashboard = () => {
               )}
               
               <motion.div 
-  initial={{ opacity: 0, scale: 0.9 }}
-  animate={{ opacity: 1, scale: 1 }}
-  transition={{ delay: 0.4 }}
-  className="flex items-center gap-3 bg-gradient-to-r from-[#00ffb2]/10 to-[#00ffb2]/5 rounded-full px-6 py-3 border border-[#00ffb2]/20 shadow-md"
->
-  <Shield className="h-5 w-5 text-neon-green" />
-  <span className="text-base font-semibold text-white">Level {user?.level}</span>
-</motion.div>
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 }}
+                className="flex items-center gap-3 bg-gradient-to-r from-[#00ffb2]/10 to-[#00ffb2]/5 rounded-full px-6 py-3 border border-[#00ffb2]/20 shadow-md"
+              >
+                <Shield className="h-5 w-5 text-neon-green" />
+                <span className="text-base font-semibold text-white">Level {user?.level}</span>
+              </motion.div>
 
             </div>
           </div>
@@ -461,21 +465,21 @@ const Dashboard = () => {
                 <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-blue-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
                 <div className="relative h-full flex flex-col">
                   <div className="flex items-center justify-between mb-4">
-  <div className="flex items-center gap-3">
-    <div className="bg-blue-900/30 rounded-xl p-2">
-      <MessageCircle className="h-5 w-5 text-blue-400" />
-    </div>
-    <span className="text-blue-400 font-medium">Step 1</span>
-  </div>
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-900/30 rounded-xl p-2">
+                        <MessageCircle className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <span className="text-blue-400 font-medium">Step 1</span>
+                    </div>
 
                     <a
-  href="https://t.me/+atUr8L_y6nJhMWVi"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="text-blue-400 hover:underline"
->
-  <ExternalLink className="w-5 h-5" />
-</a>
+                      href="https://t.me/+atUr8L_y6nJhMWVi"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:underline"
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                    </a>
                   </div>
 
                   <h3 className="font-bold text-lg mb-2">Join Our Telegram</h3>
@@ -492,14 +496,14 @@ const Dashboard = () => {
               <div className="card bg-gradient-to-br from-purple-900/20 to-dark-gray border-purple-800/50 hover:border-purple-500/50 min-h-[240px]">
                 <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-purple-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
                 <div className="relative h-full flex flex-col">
-  <a
-    href="https://www.instagram.com/"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="absolute top-3 right-3 text-purple-400 hover:text-purple-300 transition-colors"
-  >
-    <ExternalLink className="w-5 h-5" />
-  </a>
+                  <a
+                    href="https://www.instagram.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute top-3 right-3 text-purple-400 hover:text-purple-300 transition-colors"
+                  >
+                    <ExternalLink className="w-5 h-5" />
+                  </a>
 
                   <div className="flex items-center gap-3 mb-4">
                     <div className="bg-purple-900/30 rounded-xl p-2">
@@ -562,65 +566,72 @@ const Dashboard = () => {
             <div className="relative p-0">
               <div className="flex items-center gap-3 mb-8">
                 <Rocket className="h-6 w-6 text-[#009dff]" />
+                <h2 className="text-2xl font-bold">
                   Coming Soon
                 </h2>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  {/* Leaderboard */}
-  <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/20 to-[#111827] p-6 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
-    <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-purple-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
-    <div className="flex justify-center">
-      <Trophy className="h-8 w-8 text-purple-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    <h3 className="text-lg font-bold mb-2">Leaderboard & Weekly Prizes</h3>
-    <p className="text-sm text-gray-400">Compete with other users and win exclusive rewards every week.</p>
-  </div>
+                {/* Leaderboard */}
+                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/20 to-[#111827] p-6 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
+                  <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-purple-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
+                  <div className="flex justify-center">
+                    <Trophy className="h-8 w-8 text-purple-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">Leaderboard & Weekly Prizes</h3>
+                  <p className="text-sm text-gray-400">Compete with other users and win exclusive rewards every week.</p>
+                </div>
 
-  {/* Mobile App */}
-  <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-900/20 to-[#111827] p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
-    <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-blue-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
-    <div className="flex justify-center">
-      <Smartphone className="h-8 w-8 text-blue-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    <h3 className="text-lg font-bold mb-2">Mobile App</h3>
-    <p className="text-sm text-gray-400">Complete tasks and track earnings on the go with our mobile app.</p>
-  </div>
+                {/* Mobile App */}
+                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-900/20 to-[#111827] p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
+                  <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-blue-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
+                  <div className="flex justify-center">
+                    <Smartphone className="h-8 w-8 text-blue-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">Mobile App</h3>
+                  <p className="text-sm text-gray-400">Complete tasks and track earnings on the go with our mobile app.</p>
+                </div>
 
-  {/* Solana Token */}
-  <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-orange-900/20 to-[#111827] p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
-    <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-orange-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
-    <div className="flex justify-center">
-      <Coins className="h-8 w-8 text-orange-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    <h3 className="text-lg font-bold mb-2">Solana Token</h3>
-    <p className="text-sm text-gray-400">Native token on Solana for rewards, governance, and exclusive features.</p>
-  </div>
+                {/* Solana Token */}
+                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-orange-900/20 to-[#111827] p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
+                  <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-orange-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
+                  <div className="flex justify-center">
+                    <Coins className="h-8 w-8 text-orange-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">Solana Token</h3>
+                  <p className="text-sm text-gray-400">Native token on Solana for rewards, governance, and exclusive features.</p>
+                </div>
 
-  {/* Employer Dashboard */}
-  <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-900/20 to-[#111827] p-6 border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300">
-    <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-emerald-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
-    <div className="flex justify-center">
-      <Building2 className="h-8 w-8 text-emerald-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    <h3 className="text-lg font-bold mb-2">Employer Dashboard</h3>
-    <p className="text-sm text-gray-400">Post tasks, manage submissions, and find top talent in Web3.</p>
-  </div>
+                {/* Employer Dashboard */}
+                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-900/20 to-[#111827] p-6 border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300">
+                  <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-emerald-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
+                  <div className="flex justify-center">
+                    <Building2 className="h-8 w-8 text-emerald-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">Employer Dashboard</h3>
+                  <p className="text-sm text-gray-400">Post tasks, manage submissions, and find top talent in Web3.</p>
+                </div>
 
-  {/* Learn & Earn Quests */}
-  <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-yellow-900/20 to-[#111827] p-6 border border-yellow-500/20 hover:border-yellow-500/40 transition-all duration-300">
-    <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-yellow-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
-    <div className="flex justify-center">
-      <GraduationCap className="h-8 w-8 text-yellow-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    <h3 className="text-lg font-bold mb-2">Learn & Earn Quests</h3>
-    <p className="text-sm text-gray-400">Master Web3 skills while earning rewards through interactive courses.</p>
-  </div>
+                {/* Learn & Earn Quests */}
+                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-yellow-900/20 to-[#111827] p-6 border border-yellow-500/20 hover:border-yellow-500/40 transition-all duration-300">
+                  <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-yellow-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
+                  <div className="flex justify-center">
+                    <GraduationCap className="h-8 w-8 text-yellow-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">Learn & Earn Quests</h3>
+                  <p className="text-sm text-gray-400">Master Web3 skills while earning rewards through interactive courses.</p>
+                </div>
 
-  {/* Play & Earn Games */}
-  <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-900/20 to-[#111827] p-6 border border-pink-500/20 hover:border-pink-500/40 transition-all duration-300">
-    <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-pink-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
-    <div className="flex justify-center">
-      <Gamepad2 className="h-8 w-8 text-pink-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
-    <h3 className="text-lg font-bold mb-2">Play & Earn Games</h3>
-    <p className="text-sm text-gray-400">Earn tokens while playing exciting Web3 games and challenges.</p>
-  </div>
-</div>
+                {/* Play & Earn Games */}
+                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-900/20 to-[#111827] p-6 border border-pink-500/20 hover:border-pink-500/40 transition-all duration-300">
+                  <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-pink-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
+                  <div className="flex justify-center">
+                    <Gamepad2 className="h-8 w-8 text-pink-400 mb-4 transform transition-transform duration-300 group-hover:scale-110" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">Play & Earn Games</h3>
+                  <p className="text-sm text-gray-400">Earn tokens while playing exciting Web3 games and challenges.</p>
+                </div>
+              </div>
               
               <div className="mt-8 text-center">
                 <Link
@@ -735,81 +746,80 @@ const Dashboard = () => {
       )}
 
       {showMinBalanceModal && (
-  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-    <motion.div
-  initial={{ opacity: 0, scale: 0.95 }}
-  animate={{ opacity: 1, scale: 1 }}
-  exit={{ opacity: 0, scale: 0.95 }}
-  className="bg-dark-gray text-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-gray-700 text-center flex flex-col items-center"
->
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-dark-gray text-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-gray-700 text-center flex flex-col items-center"
+          >
 
-      <div className="flex items-center gap-3 mb-4">
-        <AlertCircle className="w-6 h-6 text-yellow-400" />
-        <h3 className="text-lg font-semibold">Minimum Withdrawal</h3>
-      </div>
-      <p className="text-gray-300 mb-6">
-        The minimum amount required for withdrawal is <span className="text-yellow-400 font-semibold">$30.</span>
-      </p>
-      <button
-        onClick={() => setShowMinBalanceModal(false)}
-        className="w-full py-2 px-4 bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg font-semibold transition-all duration-200"
-      >
-        Got it!
-      </button>
-    </motion.div>
-  </div>
-)}
+            <div className="flex items-center gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-yellow-400" />
+              <h3 className="text-lg font-semibold">Minimum Withdrawal</h3>
+            </div>
+            <p className="text-gray-300 mb-6">
+              The minimum amount required for withdrawal is <span className="text-yellow-400 font-semibold">$30.</span>
+            </p>
+            <button
+              onClick={() => setShowMinBalanceModal(false)}
+              className="w-full py-2 px-4 bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg font-semibold transition-all duration-200"
+            >
+              Got it!
+            </button>
+          </motion.div>
+        </div>
+      )}
 
-{showFirstAttemptFailModal && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-[#1c1c1c] text-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-red-500/20"
-    >
-      <div className="flex items-center gap-3 mb-4">
-        <AlertCircle className="w-6 h-6 text-red-400" />
-        <h3 className="text-lg font-semibold">Verification Failed</h3>
-      </div>
-      <p className="text-gray-300 mb-6">
-        You haven't completed the task yet. Please complete it and try again.
-      </p>
-      <button
-        onClick={() => setShowFirstAttemptFailModal(false)}
-        className="w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-black rounded-lg font-semibold transition-all duration-200"
-      >
-        Try Again
-      </button>
-    </motion.div>
-  </div>
-)}
+      {showFirstAttemptFailModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-[#1c1c1c] text-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-red-500/20"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-red-400" />
+              <h3 className="text-lg font-semibold">Verification Failed</h3>
+            </div>
+            <p className="text-gray-300 mb-6">
+              You haven't completed the task yet. Please complete it and try again.
+            </p>
+            <button
+              onClick={() => setShowFirstAttemptFailModal(false)}
+              className="w-full py-2 px-4 bg-red-500 hover:bg-red-600 text-black rounded-lg font-semibold transition-all duration-200"
+            >
+              Try Again
+            </button>
+          </motion.div>
+        </div>
+      )}
 
-
-{showCongratsModal && (
-  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-dark-gray text-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-green-500/30"
-    >
-      <div className="flex items-center gap-3 mb-4">
-        <PartyPopper className="w-6 h-6 text-green-400" />
-        <h3 className="text-lg font-semibold">Congratulations!</h3>
-      </div>
-      <p className="text-gray-300 mb-6">
-        You've completed your first 3 tasks and earned <span className="text-green-400 font-semibold">$10</span>!
-      </p>
-      <button
-        onClick={() => setShowCongratsModal(false)}
-        className="w-full py-2 px-4 bg-green-500 hover:bg-green-600 text-black rounded-lg font-semibold transition-all duration-200"
-      >
-        Awesome!
-      </button>
-    </motion.div>
-  </div>
-)}
+      {showCongratsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-dark-gray text-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-green-500/30"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <PartyPopper className="w-6 h-6 text-green-400" />
+              <h3 className="text-lg font-semibold">Congratulations!</h3>
+            </div>
+            <p className="text-gray-300 mb-6">
+              You've completed your first 3 tasks and earned <span className="text-green-400 font-semibold">$10</span>!
+            </p>
+            <button
+              onClick={() => setShowCongratsModal(false)}
+              className="w-full py-2 px-4 bg-green-500 hover:bg-green-600 text-black rounded-lg font-semibold transition-all duration-200"
+            >
+              Awesome!
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
