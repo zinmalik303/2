@@ -25,8 +25,7 @@ interface TaskContextType {
   getUserTaskSubmission: (taskId: string) => TaskSubmission | undefined;
   submitTask: (
     taskId: string,
-    data: { screenshot?: string; text?: string },
-    onFirstFail?: () => void
+    data: { screenshot?: string; text?: string }
   ) => Promise<boolean>;
   updateCompletedTasks: (taskId: string, completed: boolean) => Promise<void>;
   updateCompletedFirstClick: (taskId: string, clicked: boolean) => Promise<void>;
@@ -49,12 +48,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const { supabaseUser, updateTasksCompleted, refreshUser } = useAuth();
 
-  // Load user data when user changes
   useEffect(() => {
     if (supabaseUser) {
       loadAllUserData();
     } else {
-      // Reset state when user logs out
       resetState();
     }
   }, [supabaseUser]);
@@ -72,13 +69,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!supabaseUser) return;
 
     try {
-      // Load submissions and progress in parallel
       const [submissions, progress] = await Promise.all([
         dbHelpers.getTaskSubmissions(supabaseUser.id),
         dbHelpers.getUserProgress(supabaseUser.id)
       ]);
 
-      // Process submissions
       const formattedSubmissions: TaskSubmission[] = submissions.map((sub: DBTaskSubmission) => ({
         taskId: sub.task_id,
         userId: sub.user_id,
@@ -90,7 +85,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUserSubmissions(formattedSubmissions);
 
-      // Process progress
       if (progress) {
         setCompletedTasks(progress.completed_tasks || {});
         setCompletedFirstClick(progress.completed_first_click || {});
@@ -123,72 +117,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const submitTask = async (
     taskId: string,
-    data: { screenshot?: string; text?: string },
-    onFirstFail?: () => void
+    data: { screenshot?: string; text?: string }
   ): Promise<boolean> => {
     if (!supabaseUser) return false;
 
-    // Специальная обработка для telegram и instagram заданий
-    if (['telegram', 'instagram'].includes(taskId)) {
-      const failedKey = `${taskId}_failed`;
-      const alreadyFailed = completedFirstClick[failedKey] || false;
-      
-      if (!alreadyFailed) {
-        // Первая попытка - всегда провал
-        await updateCompletedFirstClick(failedKey, true);
-        if (onFirstFail) onFirstFail();
-        return false;
-      }
-      
-      // Вторая попытка - успех, сохраняем в базу
-      try {
-        const submission = await dbHelpers.submitTask(supabaseUser.id, taskId, {
-          ...data,
-          status: 'Approved',
-        });
-
-        if (!submission) {
-          console.error('Failed to create submission for:', taskId);
-          return false;
-        }
-
-        // Обновляем локальное состояние
-        const newSubmission: TaskSubmission = {
-          taskId: submission.task_id,
-          userId: submission.user_id,
-          status: submission.status as TaskStatus,
-          submittedAt: submission.submitted_at,
-          text: submission.text || undefined,
-          screenshot: submission.screenshot || undefined,
-        };
-
-        setUserSubmissions(prev => {
-          const filtered = prev.filter(sub => sub.taskId !== taskId);
-          return [...filtered, newSubmission];
-        });
-
-        // Обновляем счетчик выполненных заданий
-        const currentApprovedCount = userSubmissions.filter(s => s.status === 'Approved').length;
-        const newApprovedCount = currentApprovedCount + 1;
-        await updateTasksCompleted(newApprovedCount);
-        
-        // Помечаем задание как выполненное локально
-        await updateCompletedTasks(taskId, true);
-        
-        // Обновляем баланс пользователя
-        if (taskId === 'telegram' || taskId === 'instagram') {
-          // Эти задания не дают денежного вознаграждения, но засчитываются
-          console.log(`Task ${taskId} completed successfully`);
-        }
-
-        return true;
-      } catch (error) {
-        console.error(`Error submitting ${taskId} task:`, error);
-        return false;
-      }
-    }
-
-    // Для survey и других заданий - прямой успех
     try {
       const submission = await dbHelpers.submitTask(supabaseUser.id, taskId, {
         ...data,
@@ -199,7 +131,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      // Обновляем локальное состояние
       const newSubmission: TaskSubmission = {
         taskId: submission.task_id,
         userId: submission.user_id,
@@ -214,12 +145,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return [...filtered, newSubmission];
       });
 
-      // Обновляем счетчик выполненных заданий
       const currentApprovedCount = userSubmissions.filter(s => s.status === 'Approved').length;
       const newApprovedCount = currentApprovedCount + 1;
       await updateTasksCompleted(newApprovedCount);
       
-      // Помечаем задание как выполненное
       await updateCompletedTasks(taskId, true);
 
       return true;
@@ -288,7 +217,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useTasks = (): TaskContextType => {
   const context = useContext(TaskContext);
   if (!context) {
-    throw new Error('useTasks must be used within a TaskProvider');
+    throw new error('useTasks must be used within a TaskProvider');
   }
   return context;
 };

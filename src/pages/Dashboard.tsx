@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   ExternalLink,
   MessageCircle,
   ArrowRight,
-  Clock,
   Instagram,
   CheckCircle,
   X,
@@ -28,7 +27,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TaskContext';
 
 const Dashboard = () => {
-  const { user, updateUserBalance, setUserAsCongratulated, loading, refreshUser } = useAuth();
+  const { user, updateUserBalance, setUserAsCongratulated, loading } = useAuth();
   const { 
     submitTask, 
     completedTasks,
@@ -37,6 +36,18 @@ const Dashboard = () => {
     updateCompletedFirstClick,
     refreshData
   } = useTasks();
+
+  const [showMinBalanceModal, setShowMinBalanceModal] = useState(false);
+  const [showCongratsModal, setShowCongratsModal] = useState(false);
+  const [showFirstAttemptFailModal, setShowFirstAttemptFailModal] = useState(false);
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
+  const [currentTask, setCurrentTask] = useState<'telegram' | 'instagram' | 'survey' | null>(null);
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [username, setUsername] = useState('');
+  const [currentSurveyStep, setCurrentSurveyStep] = useState(0);
+  const [surveyAnswers, setSurveyAnswers] = useState<string[]>([]);
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [verifyingTasks, setVerifyingTasks] = useState<Record<string, number>>({});
 
   if (loading) {
     return (
@@ -48,86 +59,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  const [showMinBalanceModal, setShowMinBalanceModal] = useState(false);
-  const [showCongratsModal, setShowCongratsModal] = useState(false);
-  const [showFirstAttemptFailModal, setShowFirstAttemptFailModal] = useState(false);
-  const [showSurveyModal, setShowSurveyModal] = useState(false);
-  const [currentTask, setCurrentTask] = useState<'telegram' | 'instagram' | 'survey' | null>(null);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [showUsernameModal, setShowUsernameModal] = useState(false);
-  const [username, setUsername] = useState('');
-  const [currentSurveyStep, setCurrentSurveyStep] = useState(0);
-  const [surveyAnswers, setSurveyAnswers] = useState<string[]>([]);
-  const [showFailureNotification, setShowFailureNotification] = useState(false);
-  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
-  const [verifyingTasks, setVerifyingTasks] = useState<Record<string, number>>({});
-
-  const handleVerificationComplete = async (taskId: string) => {
-    if (!taskId) return;
-    
-    const failedKey = `${taskId}_failed`;
-    const hasAlreadyFailed = completedFirstClick[failedKey] || false;
-    
-    if (!hasAlreadyFailed) {
-      // Первая попытка - показываем провал
-      await updateCompletedFirstClick(failedKey, true);
-      setShowFirstAttemptFailModal(true);
-      return;
-    }
-    
-    // Вторая попытка - засчитываем как выполненное
-    try {
-      const success = await submitTask(taskId, {
-        text: `verified_${taskId}`,
-        screenshot: `verified_${taskId}`
-      });
-      
-      if (success) {
-        await refreshData();
-        setShowSuccessNotification(true);
-        setTimeout(() => setShowSuccessNotification(false), 3000);
-      } else {
-        setShowFailureNotification(true);
-        setTimeout(() => setShowFailureNotification(false), 3000);
-      }
-    } catch (error) {
-      console.error('Error in handleVerificationComplete:', error);
-      setShowFailureNotification(true);
-      setTimeout(() => setShowFailureNotification(false), 3000);
-    }
-  };
-
-  // Timer effect for dashboard tasks
-  useEffect(() => {
-    const intervals: NodeJS.Timeout[] = [];
-
-    Object.entries(verifyingTasks).forEach(([taskId, countdown]) => {
-      if (countdown > 0) {
-        const interval = setInterval(() => {
-          setVerifyingTasks(prev => {
-            const newCountdown = prev[taskId] - 1;
-            if (newCountdown <= 0) {
-              const updated = { ...prev };
-              delete updated[taskId];
-              // Вызываем проверку когда таймер заканчивается
-              setTimeout(() => handleVerificationComplete(taskId), 100);
-              return updated;
-            }
-            return {
-              ...prev,
-              [taskId]: newCountdown
-            };
-          });
-        }, 1000);
-        intervals.push(interval);
-      }
-    });
-
-    return () => intervals.forEach(clearInterval);
-  }, [verifyingTasks]);
-
-  const { scrollYProgress } = useScroll();
 
   const surveyQuestions = [
     {
@@ -152,24 +83,73 @@ const Dashboard = () => {
     }
   ];
 
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
-  const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
-
-  // Check if all 3 dashboard tasks are completed
   const hasAllDashboardTasksCompleted = completedTasks.telegram && completedTasks.instagram && completedTasks.survey;
 
-  // Check for reward eligibility when completed tasks change
   useEffect(() => {
     if (hasAllDashboardTasksCompleted && !user?.congratulated && !user?.hasGivenReward) {
       checkAndRewardIfEligible();
     }
   }, [hasAllDashboardTasksCompleted, user?.congratulated, user?.hasGivenReward]);
 
+  const handleVerificationComplete = async (taskId: string) => {
+    if (!taskId) return;
+    
+    const failedKey = `${taskId}_failed`;
+    const hasAlreadyFailed = completedFirstClick[failedKey] || false;
+    
+    if (!hasAlreadyFailed) {
+      await updateCompletedFirstClick(failedKey, true);
+      setShowFirstAttemptFailModal(true);
+      return;
+    }
+    
+    try {
+      const success = await submitTask(taskId, {
+        text: `verified_${taskId}`,
+        screenshot: `verified_${taskId}`
+      });
+      
+      if (success) {
+        await refreshData();
+        setShowSuccessNotification(true);
+        setTimeout(() => setShowSuccessNotification(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error in handleVerificationComplete:', error);
+    }
+  };
+
+  useEffect(() => {
+    const intervals: NodeJS.Timeout[] = [];
+
+    Object.entries(verifyingTasks).forEach(([taskId, countdown]) => {
+      if (countdown > 0) {
+        const interval = setInterval(() => {
+          setVerifyingTasks(prev => {
+            const newCountdown = prev[taskId] - 1;
+            if (newCountdown <= 0) {
+              const updated = { ...prev };
+              delete updated[taskId];
+              setTimeout(() => handleVerificationComplete(taskId), 100);
+              return updated;
+            }
+            return {
+              ...prev,
+              [taskId]: newCountdown
+            };
+          });
+        }, 1000);
+        intervals.push(interval);
+      }
+    });
+
+    return () => intervals.forEach(clearInterval);
+  }, [verifyingTasks]);
+
   const handleTaskClick = async (task: 'telegram' | 'instagram' | 'survey') => {
     const isVerifying = task in verifyingTasks;
     if (isVerifying) return;
 
-    // СБРОС username перед открытием нового задания
     setUsername('');
     if (task === 'survey') {
       setCurrentSurveyStep(0);
@@ -196,7 +176,6 @@ const Dashboard = () => {
     if (hasAllDashboardTasksCompleted && !user?.congratulated && !user?.hasGivenReward) {
       await updateUserBalance(10);
       await setUserAsCongratulated();
-
       setShowCongratsModal(true);
     }
   };
@@ -204,7 +183,6 @@ const Dashboard = () => {
   const handleUsernameSubmit = async () => {
     setShowUsernameModal(false);
     
-    // Запускаем таймер проверки
     if (currentTask) {
       setVerifyingTasks(prev => ({
         ...prev,
@@ -225,9 +203,7 @@ const Dashboard = () => {
     } else {
       await updateCompletedTasks('survey', true);
       await refreshData();
-
       setShowSurveyModal(false);
-      await refreshData();
     }
   };
 
@@ -236,9 +212,6 @@ const Dashboard = () => {
       setShowMinBalanceModal(true);
       return;
     }
-
-    // Здесь позже можно добавить подключение кошелька
-    setShowWithdrawModal(true);
   };
 
   const renderTaskButton = (task: 'telegram' | 'instagram' | 'survey') => {
@@ -320,19 +293,7 @@ const Dashboard = () => {
 
   return (
     <div className="relative min-h-screen">
-      <motion.div 
-        className="fixed inset-0 pointer-events-none"
-        style={{ opacity }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-neon-green/5 via-transparent to-transparent" />
-        <motion.div 
-          className="absolute inset-0 bg-[url('https://images.pexels.com/photos/7130555/pexels-photo-7130555.jpeg')] bg-cover bg-center opacity-5"
-          style={{ y: backgroundY }}
-        />
-      </motion.div>
-
       <div className="max-w-7xl mx-auto px-4 relative z-10 w-full overflow-hidden">
-
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -382,7 +343,6 @@ const Dashboard = () => {
                 <Shield className="h-5 w-5 text-neon-green" />
                 <span className="text-base font-semibold text-white">Level {user?.level}</span>
               </motion.div>
-
             </div>
           </div>
         </motion.div>
@@ -572,7 +532,6 @@ const Dashboard = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Leaderboard */}
                 <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/20 to-[#111827] p-6 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
                   <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-purple-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
                   <div className="flex justify-center">
@@ -582,7 +541,6 @@ const Dashboard = () => {
                   <p className="text-sm text-gray-400">Compete with other users and win exclusive rewards every week.</p>
                 </div>
 
-                {/* Mobile App */}
                 <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-900/20 to-[#111827] p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
                   <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-blue-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
                   <div className="flex justify-center">
@@ -592,7 +550,6 @@ const Dashboard = () => {
                   <p className="text-sm text-gray-400">Complete tasks and track earnings on the go with our mobile app.</p>
                 </div>
 
-                {/* Solana Token */}
                 <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-orange-900/20 to-[#111827] p-6 border border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
                   <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-orange-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
                   <div className="flex justify-center">
@@ -602,7 +559,6 @@ const Dashboard = () => {
                   <p className="text-sm text-gray-400">Native token on Solana for rewards, governance, and exclusive features.</p>
                 </div>
 
-                {/* Employer Dashboard */}
                 <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-900/20 to-[#111827] p-6 border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300">
                   <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-emerald-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
                   <div className="flex justify-center">
@@ -612,7 +568,6 @@ const Dashboard = () => {
                   <p className="text-sm text-gray-400">Post tasks, manage submissions, and find top talent in Web3.</p>
                 </div>
 
-                {/* Learn & Earn Quests */}
                 <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-yellow-900/20 to-[#111827] p-6 border border-yellow-500/20 hover:border-yellow-500/40 transition-all duration-300">
                   <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-yellow-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
                   <div className="flex justify-center">
@@ -622,7 +577,6 @@ const Dashboard = () => {
                   <p className="text-sm text-gray-400">Master Web3 skills while earning rewards through interactive courses.</p>
                 </div>
 
-                {/* Play & Earn Games */}
                 <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-pink-900/20 to-[#111827] p-6 border border-pink-500/20 hover:border-pink-500/40 transition-all duration-300">
                   <div className="absolute -right-8 -top-8 h-32 w-32 bg-gradient-to-br from-pink-500/20 to-transparent blur-2xl group-hover:animate-pulse"></div>
                   <div className="flex justify-center">
@@ -647,6 +601,7 @@ const Dashboard = () => {
         </motion.div>
       </div>
 
+      {/* Modals */}
       {showSurveyModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <motion.div 
@@ -753,7 +708,6 @@ const Dashboard = () => {
             exit={{ opacity: 0, scale: 0.95 }}
             className="bg-dark-gray text-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-gray-700 text-center flex flex-col items-center"
           >
-
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="w-6 h-6 text-yellow-400" />
               <h3 className="text-lg font-semibold">Minimum Withdrawal</h3>
