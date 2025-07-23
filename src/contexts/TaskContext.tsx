@@ -145,8 +145,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return [...filtered, newSubmission];
       });
 
-      const currentApprovedCount = userSubmissions.filter(s => s.status === 'Approved').length;
-      const newApprovedCount = currentApprovedCount + 1;
+      // Получаем актуальное количество выполненных заданий
+      const updatedSubmissions = userSubmissions.filter(sub => sub.taskId !== taskId);
+      updatedSubmissions.push(newSubmission);
+      const newApprovedCount = updatedSubmissions.filter(s => s.status === 'Approved').length;
+      
       await updateTasksCompleted(newApprovedCount);
       
       await updateCompletedTasks(taskId, true);

@@ -201,7 +201,16 @@ const Dashboard = () => {
     if (currentSurveyStep < surveyQuestions.length - 1) {
       setCurrentSurveyStep(prev => prev + 1);
     } else {
-      await updateCompletedTasks('survey', true);
+      // Завершаем survey задание
+      const success = await submitTask('survey', {
+        text: `Survey completed with answers: ${newAnswers.join(', ')}`,
+        screenshot: 'survey_completed'
+      });
+      
+      if (success) {
+        await updateCompletedTasks('survey', true);
+      }
+      
       await refreshData();
       setShowSurveyModal(false);
     }
