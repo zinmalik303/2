@@ -437,7 +437,6 @@ const progress = isVerifying ? ((maxTime - countdown) / maxTime) * 100 : 0;
                   )}
                 </AnimatePresence>
               </div>
-            </div>
           </div>
         </motion.div>
       );

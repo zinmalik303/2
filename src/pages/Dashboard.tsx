@@ -209,7 +209,7 @@ const Dashboard = () => {
     console.log('Starting timer for:', currentTask);
     setVerifyingTasks(prev => ({
       ...prev,
-      [currentTask]: 10
+      [currentTask!]: 10
     }));
 
     setUsername('');
